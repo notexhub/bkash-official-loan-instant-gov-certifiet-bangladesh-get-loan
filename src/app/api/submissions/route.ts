@@ -38,9 +38,9 @@ export async function GET(req: Request) {
 export async function PATCH(req: Request) {
   try {
     await dbConnect();
-    const { id, status } = await req.json();
+    const { id, ...updateData } = await req.json();
     
-    const submission = await Submission.findByIdAndUpdate(id, { status }, { new: true });
+    const submission = await Submission.findByIdAndUpdate(id, updateData, { new: true });
     return NextResponse.json({ success: true, submission });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

