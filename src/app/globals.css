@@ -1,26 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --color-bkash-pink: #E2136E;
+  --color-bkash-dark: #212121;
+}
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --bkash-pink: #E2136E;
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #f1f1f1;
+  font-family: 'Hind Siliguri', sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-gray-100;
+  }
+}
+
+.bkash-underline-input {
+  @apply w-full border-b-2 border-gray-100 focus:border-bkash-pink outline-none py-3 transition-all bg-transparent text-lg font-medium placeholder:text-gray-300;
+}
+
+.bkash-next-button {
+  @apply bg-bkash-pink text-white w-full h-14 rounded-2xl shadow-xl flex items-center justify-center active:scale-95 transition-all hover:bg-[#c91162] disabled:opacity-50 disabled:bg-gray-300;
+}
+.bkash-label {
+  @apply text-[13px] font-bold text-gray-400 block mb-1;
+}
+
+.mobile-container {
+  @apply max-w-md mx-auto min-h-screen bg-white shadow-2xl relative overflow-hidden flex flex-col;
+}
+
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
